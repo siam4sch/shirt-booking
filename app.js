@@ -5,13 +5,7 @@ const extra = size => Math.max(0,labels.indexOf(size)-8)*20;
 let cfg = {}, requestId = crypto.randomUUID();
 const order = $('order'), fields = order.elements;
 labels.forEach((s,i)=>$('sizes').insertAdjacentHTML('beforeend','<tr><td>'+s+'</td><td>'+(28+2*i)+'</td><td>'+lengths[i]+'</td><td>'+extra(s)+'</td></tr>'));
-async function api(data) {
-  if (!API_URL) throw Error('ยังไม่ได้เชื่อมต่อระบบรับจอง');
-  const r = await fetch(API_URL,{method:'POST',body:JSON.stringify(data),redirect:'follow'});
-  const v = await r.json();
-  if (!v.ok) throw Error(v.error || 'ติดต่อระบบไม่สำเร็จ');
-  return v;
-}
+
 function addItem(){
   const row=document.createElement('div');row.className='item';
   row.innerHTML='<label>ไซส์<select class="size">'+labels.map(s=>'<option>'+s+'</option>').join('')+'</select></label><label>จำนวนตัว<input class="qty" type="number" min="1" max="100" value="1" required></label><button type="button">ลบรายการ</button>';
@@ -39,8 +33,14 @@ order.onsubmit=async e=>{e.preventDefault();$('send').disabled=true;try{
  const file=fields.slip.files[0];if(file.size>3*1024*1024)throw Error('กรุณาเลือกไฟล์ไม่เกิน 3 MB');
  const data=Object.fromEntries(new FormData(order));delete data.slip;
  $('msg').textContent='กำลังส่งใบจอง…';
- const r=await api({...data,action:'order',requestId,items:items(),mime:file.type,slip:await encode(file)});
+ const booked=items();const r=await api({...data,action:'order',requestId,items:booked,mime:file.type,slip:await encode(file)});
  $('msg').textContent='รับใบจองแล้ว โปรดเก็บรหัสติดตามส่วนตัว '+r.token;
- $('lookup').elements.token.value=r.token;requestId=crypto.randomUUID();order.reset();$('items').replaceChildren();addItem();
+ $('lookup').elements.token.value=r.token;requestId=crypto.randomUUID();order.reset();$('items').replaceChildren();addItem();showReceipt(r.token,booked,data.delivery,data.amount,false);
 }catch(err){$('msg').textContent=err.message}finally{$('send').disabled=!cfg.ready}};
 $('lookup').onsubmit=async e=>{e.preventDefault();try{const r=await api({action:'track',phone:e.target.elements.phone.value,token:e.target.elements.token.value.trim()});$('result').textContent=[r.payment,r.fulfillment,r.notice,r.tracking].filter(Boolean).join('\n')}catch(err){$('result').textContent=err.message}};
+
+const scanCode=new URLSearchParams(location.hash.slice(1)).get('booking');
+if(scanCode && /^[a-f0-9-]{11,36}$/i.test(scanCode)){
+ $('lookup').elements.token.value=scanCode;
+ $('track').scrollIntoView();$('lookup').elements.phone.focus({preventScroll:true});
+}

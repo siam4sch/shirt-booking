@@ -21,20 +21,15 @@ function render(){
 $('add').onclick=addItem;order.oninput=render;addItem();
 
 
-async function api(data) {
-  if (!API_URL) throw Error('ยังไม่ได้เชื่อมต่อระบบรับจอง');
-  const r = await fetch(API_URL,{method:'POST',body:JSON.stringify(data),redirect:'follow'});
-  const v = await r.json();
-  if (!v.ok) throw Error(v.error || 'ติดต่อระบบไม่สำเร็จ');
-  return v;
-}
+
 let session='';
 function lockPage(){session='';cfg={};$('bookings').replaceChildren();page('queue');$('panel').hidden=true;$('signin').hidden=false;$('totals').replaceChildren();order.reset();$('items').replaceChildren();addItem();$('msg').textContent='';requestId=crypto.randomUUID()}
 async function dashboard(){
  cfg=await api({action:'dashboard',session});
  $('totals').replaceChildren();
  for(const values of cfg.counts){const row=$('totals').insertRow();values.forEach(v=>row.insertCell().textContent=v)}
- drawOrders();$('sheet').href=cfg.sheet;$('send').disabled=!cfg.ready;render();
+ if(!Array.isArray(cfg.orders))throw Error('กรุณาอัปเดต Apps Script เป็นรุ่นที่รองรับรายการจอง');
+ drawMetrics();drawOrders();$('sheet').href=cfg.sheet;$('send').disabled=!cfg.ready;render();
 }
 $('login').onsubmit=async e=>{e.preventDefault();const f=e.target,b=f.querySelector('button');b.disabled=true;try{
  const r=await api({action:'login',user:f.elements.user.value,password:f.elements.password.value});session=r.session;f.reset();await dashboard();
@@ -44,7 +39,7 @@ $('logout').onclick=async()=>{const old=session;lockPage();try{await api({action
 order.onsubmit=async e=>{e.preventDefault();$('send').disabled=true;
  try{const d={...Object.fromEntries(new FormData(order)),requestId,items:items()};
  const r=await api({...d,action:'cash',session});requestId=crypto.randomUUID();order.reset();$('items').replaceChildren();addItem();
- $('msg').textContent='บันทึกเงินสดแล้ว รหัส '+r.token;await dashboard();
+ $('msg').textContent='บันทึกเงินสดแล้ว รหัส '+r.token;showReceipt(r.token,d.items,d.delivery,d.amount,true);await dashboard();
  }catch(err){if(err.message==='กรุณาเข้าสู่ระบบใหม่'){lockPage();$('status').textContent=err.message}else $('msg').textContent=err.message}
  finally{$('send').disabled=!cfg.ready}};
 function page(id){
@@ -57,11 +52,11 @@ function drawOrders(){
  const q=$('search').value.trim().toLowerCase(),state=$('filter').value,list=$('bookings');
  list.replaceChildren();
  const rows=(cfg.orders||[]).filter(r=>(!state||r.payment===state)&&[r.id,r.name,r.phone].join(' ').toLowerCase().includes(q));
- if(!rows.length)list.append(el('p','ไม่พบรายการจองตามที่เลือก'));
+ if(!rows.length){const empty=el('div','');empty.className='empty';empty.append(el('strong',cfg.orders.length?'ไม่พบใบจองที่ตรงกับตัวกรอง':'ยังไม่มีใบจอง'),el('p',cfg.orders.length?'ลองเปลี่ยนชื่อ เบอร์โทร หรือสถานะที่ค้นหา':'ใบจองออนไลน์และรายการเงินสดจะปรากฏที่นี่'));list.append(empty)}
  for(const r of rows){
   const box=el('details','');box.className='booking';
   const title=el('summary',''),badge=el('span',r.payment);badge.className='badge';
-  title.append(el('strong',r.name+' · '+r.count+' ตัว'),el('span',r.total+' บาท'),badge);box.append(title);
+  title.append(el('strong',r.name),el('small',r.id+' · '+r.count+' ตัว'),el('span',r.total+' บาท'),badge);box.append(title);
   box.ontoggle=()=>{if(box.open&&!box.dataset.loaded){box.dataset.loaded='1';orderDetail(box,r)}};
   list.append(box);
  }
@@ -90,3 +85,16 @@ function orderDetail(box,r){
 }
 $('search').oninput=drawOrders;$('filter').onchange=drawOrders;
 $('refresh').onclick=async()=>{try{await dashboard()}catch(e){$('status').textContent=e.message}};
+
+function drawMetrics(){
+ const rows=cfg.orders;const parent=$('metrics');parent.replaceChildren();
+ for(const [label,value,state] of [
+  ['ใบจองทั้งหมด',rows.length,''],
+  ['รอตรวจสอบสลิป',rows.filter(r=>r.payment==='รอตรวจสอบ').length,'รอตรวจสอบ'],
+  ['ชำระแล้ว',rows.filter(r=>r.payment==='ชำระแล้ว').length,'ชำระแล้ว']
+ ]){
+  const button=el('button','');button.append(el('span',label),el('strong',value.toLocaleString('th-TH')));
+  button.onclick=()=>{page('queue');$('filter').value=state;$('search').value='';drawOrders()};
+  parent.append(button);
+ }
+}
