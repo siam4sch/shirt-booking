@@ -4,13 +4,6 @@ const lengths = [19,21,23,24,25,26,27,28,29,30,31,31,32,33,33,33,33];
 const extra = size => Math.max(0,labels.indexOf(size)-8)*30;
 let cfg = {}, requestId = crypto.randomUUID();
 const order = $('order'), fields = order.elements;
-function addItem(){
-  const row=document.createElement('div');row.className='item';
-  row.innerHTML='<label>ไซส์<select class="size">'+labels.map(s=>'<option>'+s+'</option>').join('')+'</select></label><label>จำนวนตัว<input class="qty" type="number" min="1" max="100" value="1" required></label><button type="button">ลบรายการ</button>';
-  row.querySelector('button').onclick=()=>{if($('items').children.length>1){row.remove();render()}};
-  $('items').append(row);render();
-}
-function items(){return [...document.querySelectorAll('.item')].map(r=>({size:r.querySelector('.size').value,qty:Number(r.querySelector('.qty').value)}));}
 function render(){
   const rows=items(), mail=fields.delivery.value==='mail';
   const n=rows.reduce((a,r)=>a+r.qty,0), ship=mail?n*50:0;
