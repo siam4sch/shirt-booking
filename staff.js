@@ -29,12 +29,12 @@ async function api(data) {
   return v;
 }
 let session='';
-function lockPage(){session='';$('panel').hidden=true;$('signin').hidden=false;$('totals').replaceChildren();order.reset();$('items').replaceChildren();addItem();$('msg').textContent='';requestId=crypto.randomUUID()}
+function lockPage(){session='';cfg={};$('bookings').replaceChildren();page('queue');$('panel').hidden=true;$('signin').hidden=false;$('totals').replaceChildren();order.reset();$('items').replaceChildren();addItem();$('msg').textContent='';requestId=crypto.randomUUID()}
 async function dashboard(){
  cfg=await api({action:'dashboard',session});
  $('totals').replaceChildren();
  for(const values of cfg.counts){const row=$('totals').insertRow();values.forEach(v=>row.insertCell().textContent=v)}
- $('sheet').href=cfg.sheet;$('send').disabled=!cfg.ready;render();
+ drawOrders();$('sheet').href=cfg.sheet;$('send').disabled=!cfg.ready;render();
 }
 $('login').onsubmit=async e=>{e.preventDefault();const f=e.target,b=f.querySelector('button');b.disabled=true;try{
  const r=await api({action:'login',user:f.elements.user.value,password:f.elements.password.value});session=r.session;f.reset();await dashboard();
@@ -47,3 +47,46 @@ order.onsubmit=async e=>{e.preventDefault();$('send').disabled=true;
  $('msg').textContent='บันทึกเงินสดแล้ว รหัส '+r.token;await dashboard();
  }catch(err){if(err.message==='กรุณาเข้าสู่ระบบใหม่'){lockPage();$('status').textContent=err.message}else $('msg').textContent=err.message}
  finally{$('send').disabled=!cfg.ready}};
+function page(id){
+ for(const name of ['queue','report','order'])$(name).hidden=name!==id;
+ document.querySelectorAll('[data-page]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.page===id)));
+}
+document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>page(b.dataset.page));page('queue');
+function el(tag,text){const node=document.createElement(tag);node.textContent=text;return node}
+function drawOrders(){
+ const q=$('search').value.trim().toLowerCase(),state=$('filter').value,list=$('bookings');
+ list.replaceChildren();
+ const rows=(cfg.orders||[]).filter(r=>(!state||r.payment===state)&&[r.id,r.name,r.phone].join(' ').toLowerCase().includes(q));
+ if(!rows.length)list.append(el('p','ไม่พบรายการจองตามที่เลือก'));
+ for(const r of rows){
+  const box=el('details','');box.className='booking';
+  const title=el('summary',''),badge=el('span',r.payment);badge.className='badge';
+  title.append(el('strong',r.name+' · '+r.count+' ตัว'),el('span',r.total+' บาท'),badge);box.append(title);
+  box.ontoggle=()=>{if(box.open&&!box.dataset.loaded){box.dataset.loaded='1';orderDetail(box,r)}};
+  list.append(box);
+ }
+}
+function orderDetail(box,r){
+ const fields=el('dl','');
+ const data=[['รหัสใบจอง',r.id],['เบอร์ติดต่อ',r.phone],['รายการเสื้อ',r.items.map(i=>i.size+' × '+i.qty).join(', ')],['วิธีรับ',r.delivery==='mail'?'ไปรษณีย์':'รับที่โรงเรียน'],['ที่อยู่',r.address||'—'],['ค่าจัดส่ง',r.ship+' บาท'],['ยอดที่ต้องชำระ',r.total+' บาท'],['ยอดที่แจ้ง',r.amount+' บาท · '+r.method],['เวลาชำระ',String(r.paidAt).replace('T',' ')],['สถานะรับเสื้อ',r.fulfillment],['เลขพัสดุ',r.tracking||'—'],['ผลตรวจล่าสุด',[r.reviewer,r.reviewTime,r.note].filter(Boolean).join(' · ')||'—']];
+ data.forEach(([k,v])=>fields.append(el('dt',k),el('dd',v)));box.append(fields);
+ if(r.method!=='โอน')return;
+ const open=el('button','เปิดสลิป'),preview=el('div',''),message=el('p','');preview.className='preview';message.setAttribute('role','status');
+ const checkbox=el('input','');checkbox.type='checkbox';checkbox.disabled=true;
+ const confirm=el('label','');confirm.append(checkbox,' ตรวจยอดเงินเข้าบัญชีและรายละเอียดสลิปแล้ว');
+ const note=el('textarea','');note.placeholder='หมายเหตุ / เหตุผลหากต้องแก้ไข';note.maxLength=500;
+ const approve=el('button','ยืนยันชำระแล้ว'),reject=el('button','ต้องแก้ไข');approve.disabled=true;
+ checkbox.onchange=()=>approve.disabled=!checkbox.checked;
+ open.disabled=!r.hasSlip;open.onclick=async()=>{open.disabled=true;try{
+  const f=await api({action:'slip',session,id:r.id}),url='data:'+f.mime+';base64,'+f.data;
+  if(['image/png','image/jpeg'].includes(f.mime)){const img=new Image();img.alt='สลิปที่ผู้จองแนบ';img.src=url;preview.replaceChildren(img)}
+  else if(f.mime==='application/pdf'){const a=el('a','ดาวน์โหลด PDF เพื่อตรวจสลิป');a.href=url;a.download='slip.pdf';preview.replaceChildren(a)}else throw Error('เปิดไฟล์ชนิดนี้ไม่ได้');
+  checkbox.disabled=false;
+ }catch(e){message.textContent=e.message;open.disabled=false}};
+ async function decide(payment){if(payment==='ต้องแก้ไข'&&!note.value.trim()){message.textContent='กรุณากรอกเหตุผล';return}
+ approve.disabled=reject.disabled=true;try{await api({action:'review',session,id:r.id,previous:r.payment,version:r.reviewTime,payment,confirmed:checkbox.checked,note:note.value});await dashboard();$('status').textContent='บันทึกผลตรวจใบจอง '+r.id+' แล้ว'}catch(e){message.textContent=e.message;approve.disabled=!checkbox.checked;reject.disabled=false}}
+ approve.onclick=()=>decide('ชำระแล้ว');reject.onclick=()=>decide('ต้องแก้ไข');
+ box.append(open,preview,confirm,note,approve,reject,message);
+}
+$('search').oninput=drawOrders;$('filter').onchange=drawOrders;
+$('refresh').onclick=async()=>{try{await dashboard()}catch(e){$('status').textContent=e.message}};

@@ -43,4 +43,4 @@ order.onsubmit=async e=>{e.preventDefault();$('send').disabled=true;try{
  $('msg').textContent='รับใบจองแล้ว โปรดเก็บรหัสติดตามส่วนตัว '+r.token;
  $('lookup').elements.token.value=r.token;requestId=crypto.randomUUID();order.reset();$('items').replaceChildren();addItem();
 }catch(err){$('msg').textContent=err.message}finally{$('send').disabled=!cfg.ready}};
-$('lookup').onsubmit=async e=>{e.preventDefault();try{const r=await api({action:'track',token:e.target.elements.token.value.trim()});$('result').textContent=[r.payment,r.fulfillment,r.notice,r.tracking].filter(Boolean).join('\n')}catch(err){$('result').textContent=err.message}};
+$('lookup').onsubmit=async e=>{e.preventDefault();try{const r=await api({action:'track',phone:e.target.elements.phone.value,token:e.target.elements.token.value.trim()});$('result').textContent=[r.payment,r.fulfillment,r.notice,r.tracking].filter(Boolean).join('\n')}catch(err){$('result').textContent=err.message}};
