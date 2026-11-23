@@ -14,17 +14,17 @@ async function api(data) {
 }
 function addItem(){
   const row=document.createElement('div');row.className='item';
-  row.innerHTML='<label>ไซส์<select class="size">'+labels.map(s=>'<option>'+s+'</option>').join('')+'</select></label><label>จำนวนตัว<input class="qty" type="number" min="1" max="100" value="1" required></label><label><input type="checkbox" class="hem"> เพิ่มชายเสื้อ</label><label><input type="checkbox" class="arm"> เพิ่มความยาวแขน</label><button type="button">ลบรายการ</button>';
+  row.innerHTML='<label>ไซส์<select class="size">'+labels.map(s=>'<option>'+s+'</option>').join('')+'</select></label><label>จำนวนตัว<input class="qty" type="number" min="1" max="100" value="1" required></label><button type="button">ลบรายการ</button>';
   row.querySelector('button').onclick=()=>{if($('items').children.length>1){row.remove();render()}};
   $('items').append(row);render();
 }
-function items(){return [...document.querySelectorAll('.item')].map(r=>({size:r.querySelector('.size').value,qty:Number(r.querySelector('.qty').value),hem:r.querySelector('.hem').checked,arm:r.querySelector('.arm').checked}));}
+function items(){return [...document.querySelectorAll('.item')].map(r=>({size:r.querySelector('.size').value,qty:Number(r.querySelector('.qty').value)}));}
 function render(){
   const rows=items(), mail=fields.delivery.value==='mail';
   const n=rows.reduce((a,r)=>a+r.qty,0), ship=mail?n*50:0;
-  const mods=rows.reduce((a,r)=>a+r.qty*(extra(r.size)+(r.arm&&r.hem?Number(cfg.both):r.arm||r.hem?10:0)),0);
+  const mods=rows.reduce((a,r)=>a+r.qty*extra(r.size),0);
   $('addr').hidden=!mail;fields.address.required=mail;
-  $('bill').textContent='จำนวนเสื้อ '+n+' ตัว\nค่าเสื้อ '+(cfg.ready?n*cfg.base+' บาท':'—')+'\nค่าไซส์พิเศษและปรับความยาว '+(Number.isFinite(mods)?mods+' บาท':'—')+'\nค่าจัดส่ง '+ship+' บาท\nยอดที่ต้องโอน '+(cfg.ready?(n*cfg.base+mods+ship)+' บาท':'—');
+  $('bill').textContent='จำนวนเสื้อ '+n+' ตัว\nค่าเสื้อ '+(cfg.ready?n*cfg.base+' บาท':'—')+'\nค่าไซส์พิเศษ '+(Number.isFinite(mods)?mods+' บาท':'—')+'\nค่าจัดส่ง '+ship+' บาท\nยอดที่ต้องโอน '+(cfg.ready?(n*cfg.base+mods+ship)+' บาท':'—');
 }
 $('add').onclick=addItem;order.oninput=render;addItem();
 async function init(){try{
