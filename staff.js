@@ -1,7 +1,7 @@
 const $ = id => document.getElementById(id);
 const labels = '28 30 32 34 SS S M L XL 2XL 3XL 4XL 5XL 6XL 7XL 8XL 9XL'.split(' ');
 const lengths = [19,21,23,24,25,26,27,28,29,30,31,31,32,33,33,33,33];
-const extra = size => Math.max(0,labels.indexOf(size)-8)*20;
+const extra = size => Math.max(0,labels.indexOf(size)-8)*30;
 let cfg = {}, requestId = crypto.randomUUID();
 const order = $('order'), fields = order.elements;
 function addItem(){
@@ -16,7 +16,15 @@ function render(){
   const n=rows.reduce((a,r)=>a+r.qty,0), ship=mail?n*50:0;
   const mods=rows.reduce((a,r)=>a+r.qty*extra(r.size),0);
   $('addr').hidden=!mail;fields.address.required=mail;
-  $('bill').textContent='จำนวนเสื้อ '+n+' ตัว\nค่าเสื้อ '+(cfg.ready?n*cfg.base+' บาท':'—')+'\nค่าไซส์พิเศษ '+(Number.isFinite(mods)?mods+' บาท':'—')+'\nค่าจัดส่ง '+ship+' บาท\nยอดที่ต้องโอน '+(cfg.ready?(n*cfg.base+mods+ship)+' บาท':'—');
+  const base=cfg.ready?Math.round(n*cfg.base*100)/100:null;
+  const total=base===null?null:Math.round((base+mods+ship)*100)/100;
+  fields.amount.value=total===null?'':total.toFixed(2);
+  const money=value=>value===null?'—':value.toLocaleString('th-TH',{maximumFractionDigits:2})+' บาท';
+  $('bill-base').textContent=money(base);
+  $('bill-count').textContent=n+' ตัว';
+  $('bill-extra').textContent=money(mods);
+  $('bill-ship').textContent=money(ship);
+  $('bill-total').textContent=money(total);
 }
 $('add').onclick=addItem;order.oninput=render;addItem();
 
@@ -87,13 +95,22 @@ $('search').oninput=drawOrders;$('filter').onchange=drawOrders;
 $('refresh').onclick=async()=>{try{await dashboard()}catch(e){$('status').textContent=e.message}};
 
 function drawMetrics(){
- const rows=cfg.orders;const parent=$('metrics');parent.replaceChildren();
- for(const [label,value,state] of [
-  ['ใบจองทั้งหมด',rows.length,''],
-  ['รอตรวจสอบสลิป',rows.filter(r=>r.payment==='รอตรวจสอบ').length,'รอตรวจสอบ'],
-  ['ชำระแล้ว',rows.filter(r=>r.payment==='ชำระแล้ว').length,'ชำระแล้ว']
- ]){
-  const button=el('button','');button.append(el('span',label),el('strong',value.toLocaleString('th-TH')));
+ const parent=$('metrics');parent.replaceChildren();
+ const rows=cfg.orders;
+ for(const [label,state] of [['ใบจองทั้งหมด',''],['ยอดแจ้งโอนรอตรวจ','รอตรวจสอบ'],['ยอดรับชำระแล้ว','ชำระแล้ว']]){
+  const selected=state?rows.filter(r=>r.payment===state):rows;
+  const button=el('button','');
+  button.append(el('span',label));
+  if(state){
+   const satang=selected.reduce((sum,r)=>sum+Math.round(Number(r.amount)*100),0);
+   button.append(el('strong',(satang/100).toLocaleString('th-TH',{maximumFractionDigits:2})+' บาท'),el('small',selected.length+' ใบจอง'));
+  }else button.append(el('strong',rows.length.toLocaleString('th-TH')),el('small','ใบจอง'));
+  if(state==='ชำระแล้ว'){
+   for(const method of ['โอน','เงินสด']){
+    const sum=selected.filter(r=>r.method===method).reduce((n,r)=>n+Math.round(Number(r.amount)*100),0);
+    button.append(el('small',method+' '+(sum/100).toLocaleString('th-TH')+' บาท'));
+   }
+  }
   button.onclick=()=>{page('queue');$('filter').value=state;$('search').value='';drawOrders()};
   parent.append(button);
  }
