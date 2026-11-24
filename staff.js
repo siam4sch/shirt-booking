@@ -44,10 +44,10 @@ order.onsubmit=async e=>{e.preventDefault();$('send').disabled=true;
  }catch(err){if(err.message==='กรุณาเข้าสู่ระบบใหม่'){lockPage();$('status').textContent=err.message}else $('msg').textContent=err.message}
  finally{$('send').disabled=!cfg.ready}};
 function page(id){
- for(const name of ['queue','report','order'])$(name).hidden=name!==id;
+ for(const name of ['queue','report','round','order'])$(name).hidden=name!==id;
  document.querySelectorAll('[data-page]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.page===id)));
 }
-document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>page(b.dataset.page));page('queue');
+document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{page(b.dataset.page);if(b.dataset.page==='round')loadRound()});page('queue');
 function el(tag,text){const node=document.createElement(tag);node.textContent=text;return node}
 function drawOrders(){
  const q=$('search').value.trim().toLowerCase(),state=$('filter').value,list=$('bookings');
@@ -108,3 +108,42 @@ function drawMetrics(){
   parent.append(button);
  }
 }
+
+let savedRoundDay = '';
+async function loadRound(change) {
+ const staffSession = session;
+ $('round-form').hidden = true;
+ $('round-refresh').disabled = true;
+ $('round-figures').hidden = true;
+ $('round-state').textContent = 'กำลังโหลดข้อมูลรอบ…';
+ try {
+  const r = await api({...change,action:change ? 'scheduleRound' : 'round',session:staffSession});
+  if (session !== staffSession) return;
+  savedRoundDay = r.day;
+  $('round-form').hidden = r.closed;
+  $('round-day').value = r.day;
+  $('round-state').textContent = 'ยังไม่ได้กำหนดวันตัดรอบ';
+  if (!r.day) return;
+  const date = new Intl.DateTimeFormat('th-TH',{dateStyle:'long',timeZone:'Asia/Bangkok'}).format(new Date(r.day+'T12:00:00+07:00'));
+  $('round-state').textContent = (r.closed ? 'ตัดยอดแล้ว' : 'ยอดประมาณการ') + ' · นับถึงสิ้นวันที่ ' + date + ' เวลาไทย';
+  $('round-qty').textContent = r.quantity+' ตัว';
+  $('round-orders').textContent = r.orders+' ใบ';
+  $('round-pending').textContent = r.pending+' ตัว';
+  $('round-sizes').replaceChildren();
+  for (const size of labels) {
+   const row = $('round-sizes').insertRow();
+   row.insertCell().textContent = size;
+   row.insertCell().textContent = r.counts[size];
+  }
+  $('round-sheet').hidden = !r.url;
+  if (r.url) $('round-sheet').href = r.url;
+  $('round-figures').hidden = false;
+ } catch (err) {
+  if (session === staffSession) $('round-state').textContent = err.message;
+ } finally { $('round-refresh').disabled = false; }
+}
+$('round-form').onsubmit = event => {
+ event.preventDefault();
+ loadRound({day:$('round-day').value,previous:savedRoundDay});
+};
+$('round-refresh').onclick = () => loadRound();
