@@ -1,3 +1,3 @@
 // แก้ชื่อและช่องทางติดต่อในเครื่องหมายคำพูด
-document.getElementById('owner').textContent = 'รอระบุชื่อและช่องทางติดต่อ';
-document.getElementById('developer').textContent = 'รอระบุชื่อและช่องทางติดต่อ';
+document.getElementById('owner').textContent = 'นางสาวละอองดาว สิมมะลิ โทร 0833067959';
+document.getElementById('developer').textContent = 'นายชาญณรงค์ มงคล';
