@@ -1,9 +1,31 @@
-<!DOCTYPE html><html lang="th"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>โดมนี้เพื่อน้อง | โรงเรียนสยามกลการ 4</title><link rel="stylesheet" href="style.css"><body>
+<!DOCTYPE html><html lang="th"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>โดมนี้เพื่อน้อง | โรงเรียนสยามกลการ 4</title><link rel="stylesheet" href="style.css?v=payment2"><body>
 <header><strong>โรงเรียนสยามกลการ 4</strong><nav><a href="#order">สั่งจองเสื้อ</a><a href="#track">ติดตามใบจอง</a><a class="staff-link" href="staff.html">เข้าสู่ระบบเจ้าหน้าที่</a></nav></header>
 <main><section class="hero"><div><small>เสื้อผ้าป่าเพื่อการศึกษา</small><h1>โดมนี้เพื่อน้อง</h1><h2>ผ้าป่าศิษย์เก่า เฟต 3</h2><p>โรงเรียนสยามกลการ 4</p><a class="btn" href="#order">เลือกไซส์และสั่งจอง ↓</a></div><a class="poster" href="#chart" aria-label="ดูตารางไซส์"><img src="shirt.jpg" alt="ภาพเสื้อด้านหน้าและด้านหลัง พร้อมตารางขนาดเสื้อ"></a></section>
 <details id="chart"><summary>ตารางไซส์และขนาดหลังเย็บเสร็จ (นิ้ว)</summary><table><thead><tr><th>ไซส์</th><th>รอบอก</th><th>ความยาว</th><th>เพิ่มจากราคาฐาน (บาท)</th></tr></thead><tbody id="sizes"></tbody></table><small>ขนาดอาจคลาดเคลื่อน ±1 นิ้ว</small></details>
 <form id="order"><h2>สั่งจองเสื้อ</h2><div class="grid"><section><h3>ข้อมูลผู้จอง</h3><label>ชื่อ–นามสกุล<input name="customer" required maxlength="120" autocomplete="name"></label><label>เบอร์ติดต่อ<input name="phone" type="tel" required pattern="[0-9]{9,10}" autocomplete="tel"></label>
 <h3>รายการเสื้อ</h3><div id="items"></div><button type="button" id="add">+ เพิ่มรายการเสื้อ</button>
 <h3>วิธีรับเสื้อ</h3><label><select name="delivery"><option value="pickup">รับที่โรงเรียน · ฟรี</option><option value="mail">ส่งไปรษณีย์ · 50 บาทต่อตัว</option></select></label><label id="addr" hidden>ที่อยู่จัดส่งพร้อมรหัสไปรษณีย์<textarea name="address" maxlength="600"></textarea></label></section>
-<section><h3>สรุปยอดใบจอง</h3><div class="price-card" aria-live="polite"><div><span>จำนวนเสื้อ</span><strong id="bill-count"></strong></div><div><span>ค่าเสื้อราคาฐาน</span><strong id="bill-base"></strong></div><div><span>ค่าไซส์พิเศษ</span><strong id="bill-extra"></strong></div><div><span>ค่าจัดส่ง</span><strong id="bill-ship"></strong></div><div class="grand-total"><span>ยอดที่ต้องโอน</span><strong id="bill-total"></strong></div></div><h3>ชำระเงินด้วยการโอน</h3><p id="bank">รอข้อมูลบัญชีจากโรงเรียน</p><div id="qr">พื้นที่สำหรับ QR Code โอนเงิน</div><label>จำนวนเงินที่โอน (บาท)<input readonly name="amount" type="number" min=".01" step=".01" required></label><label>วันและเวลาที่โอน (เวลาไทย)<input name="paidAt" type="datetime-local" required></label><label>สลิปโอนเงิน (JPG, PNG หรือ PDF สูงสุด 3 MB)<input name="slip" type="file" accept="image/jpeg,image/png,application/pdf" required></label><button class="btn" id="send" disabled>ส่งใบจอง</button><p id="msg" role="status"></p></section></div></form>
-<section id="track"><h2>ติดตามใบจอง</h2><form id="lookup"><label>รหัสติดตามส่วนตัว<input name="token" required autocomplete="off" placeholder="เช่น a3b72-4c9ef"></label><label>เบอร์โทรที่ใช้จอง<input name="phone" required type="tel" pattern="[0-9]{9,10}"></label><button>ตรวจสอบสถานะ</button></form><div id="result" role="status" aria-live="polite" aria-atomic="true"></div></section></main><footer class="school-footer"><div class="footer-inner"><div class="footer-brand"><strong>โรงเรียนสยามกลการ 4</strong><small>โครงการโดมนี้เพื่อน้อง · ผ้าป่าศิษย์เก่า เฟต 3</small></div><div class="footer-contact"><b>ผู้รับผิดชอบโครงการ</b><span id="owner"></span></div><div class="footer-contact"><b>ผู้พัฒนาเว็บไซต์</b><span id="developer"></span></div></div></footer><script src="qr.js"></script><script src="interaction.js"></script><script src="config.js"></script><script src="footer.js"></script><script src="shirt-image.js"></script><script src="size-cards.js"></script><script src="app.js"></script></body></html>
+<section><h3>สรุปยอดใบจอง</h3><div class="price-card" aria-live="polite"><div><span>จำนวนเสื้อ</span><strong id="bill-count"></strong></div><div><span>ค่าเสื้อราคาฐาน</span><strong id="bill-base"></strong></div><div><span>ค่าไซส์พิเศษ</span><strong id="bill-extra"></strong></div><div><span>ค่าจัดส่ง</span><strong id="bill-ship"></strong></div></div>
+<h3>ชำระเงินด้วยการโอน</h3>
+<div class="transfer-card">
+  <div class="transfer-total"><span>ยอดที่ต้องโอน</span><strong id="bill-total" aria-live="polite">—</strong></div>
+  <div class="transfer-bank">
+    <h4>บัญชีรับโอน</h4>
+    <dl>
+      <div><dt>ธนาคาร</dt><dd id="pay-bank">—</dd></div>
+      <div><dt>ชื่อบัญชี</dt><dd id="pay-holder">—</dd></div>
+      <div><dt>เลขบัญชี</dt><dd><strong id="pay-account" dir="ltr">—</strong></dd></div>
+    </dl>
+    <button type="button" id="copy-account" hidden>คัดลอกเลขบัญชี</button>
+    <span class="copy-feedback" id="copy-feedback" role="status"></span>
+  </div>
+  <div class="transfer-qr" id="pay-qr" hidden>
+    <h4>สแกน QR เพื่อชำระเงิน</h4>
+    <img id="pay-image" alt="QR Code รับเงินสำหรับจองเสื้อ" hidden>
+    <a id="qr-original" target="_blank" rel="noopener" hidden>เปิดรูป QR ขนาดเต็ม ↗</a>
+    <p id="qr-error" role="status" hidden>โหลดรูป QR ไม่สำเร็จ กรุณาใช้เลขบัญชีด้านบน</p>
+  </div>
+</div>
+<input type="hidden" name="amount">
+<h3>แนบหลักฐานหลังโอนเงิน</h3><label>วันและเวลาที่โอน (เวลาไทย)<input name="paidAt" type="datetime-local" required></label><label>สลิปโอนเงิน (JPG, PNG หรือ PDF สูงสุด 3 MB)<input name="slip" type="file" accept="image/jpeg,image/png,application/pdf" required></label><button class="btn" id="send" disabled>ส่งใบจอง</button><p id="msg" role="status"></p></section></div></form>
+<section id="track"><h2>ติดตามใบจอง</h2><form id="lookup"><label>รหัสติดตามส่วนตัว<input name="token" required autocomplete="off" placeholder="เช่น a3b72-4c9ef"></label><label>เบอร์โทรที่ใช้จอง<input name="phone" required type="tel" pattern="[0-9]{9,10}"></label><button>ตรวจสอบสถานะ</button></form><div id="result" role="status" aria-live="polite" aria-atomic="true"></div></section></main><footer class="school-footer"><div class="footer-inner"><div class="footer-brand"><strong>โรงเรียนสยามกลการ 4</strong><small>โครงการโดมนี้เพื่อน้อง · ผ้าป่าศิษย์เก่า เฟต 3</small></div><div class="footer-contact"><b>ผู้รับผิดชอบโครงการ</b><span id="owner"></span></div><div class="footer-contact"><b>ผู้พัฒนาเว็บไซต์</b><span id="developer"></span></div></div></footer><script src="qr.js"></script><script src="interaction.js"></script><script src="config.js"></script><script src="footer.js"></script><script src="shirt-image.js"></script><script src="size-cards.js"></script><script src="app.js?v=payment2"></script></body></html>

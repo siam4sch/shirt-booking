@@ -22,12 +22,54 @@ function render(){
   $('bill-total').textContent=money(total);
 }
 $('add').onclick=addItem;order.oninput=render;addItem();
-async function init(){try{
- cfg=await api({action:'config'});$('bank').textContent=[cfg.bank,cfg.holder,cfg.account].filter(Boolean).join('\n')||'รอข้อมูลบัญชีจากโรงเรียน';
- if(cfg.qr){const img=new Image();img.alt='QR Code โอนเงิน';img.src=cfg.qr;$('qr').replaceChildren(img)}
- $('send').disabled=!cfg.ready;render();
-}catch(e){$('msg').textContent=e.message}
-if(!cfg.ready)$('msg').textContent='ยังไม่เปิดรับจอง · อยู่ระหว่างเตรียมข้อมูลการชำระเงิน';}
+function showTransferDetails(config) {
+  $('pay-bank').textContent = config.bank || 'รอระบุธนาคาร';
+  $('pay-holder').textContent = config.holder || 'รอระบุชื่อบัญชี';
+  $('pay-account').textContent = config.account || 'รอระบุเลขบัญชี';
+  $('copy-account').hidden = !config.account;
+  if (!config.qr) return;
+
+  const image = $('pay-image');
+  const original = $('qr-original');
+  image.onload = () => {
+    image.hidden = false;
+    original.href = image.src;
+    original.hidden = false;
+    $('pay-qr').hidden = false;
+  };
+  image.onerror = () => {
+    $('qr-error').hidden = false;
+    $('pay-qr').hidden = false;
+  };
+  image.src = config.qr;
+}
+
+$('copy-account').onclick = async () => {
+  const account = $('pay-account');
+  try {
+    await navigator.clipboard.writeText(account.textContent);
+    $('copy-feedback').textContent = 'คัดลอกเลขบัญชีแล้ว';
+  } catch {
+    const range = document.createRange();
+    range.selectNodeContents(account);
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+    $('copy-feedback').textContent = 'เลือกเลขบัญชีไว้แล้ว กดคัดลอกจากเมนูของอุปกรณ์';
+  }
+};
+
+async function init() {
+  try {
+    cfg = await api({action:'config'});
+    showTransferDetails(cfg);
+    $('send').disabled = !cfg.ready;
+    render();
+    if (!cfg.ready) $('msg').textContent = 'ยังไม่เปิดรับจอง · อยู่ระหว่างเตรียมข้อมูลการชำระเงิน';
+  } catch (error) {
+    $('msg').textContent = error.message;
+  }
+}
 init();
 function encode(file){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result.split(',')[1]);reader.onerror=()=>reject(Error('อ่านสลิปไม่ได้'));reader.readAsDataURL(file)});}
 order.onsubmit=async e=>{e.preventDefault();$('send').disabled=true;try{
