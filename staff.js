@@ -24,11 +24,10 @@ $('add').onclick=addItem;order.oninput=render;addItem();
 
 
 let session='';
-function lockPage(){session='';cfg={};$('bookings').replaceChildren();page('queue');$('panel').hidden=true;$('signin').hidden=false;$('totals').replaceChildren();order.reset();$('items').replaceChildren();addItem();$('msg').textContent='';requestId=crypto.randomUUID()}
+function lockPage(){session='';cfg={};$('show-empty-sizes').checked=false;$('bookings').replaceChildren();page('queue');$('panel').hidden=true;$('signin').hidden=false;$('totals').replaceChildren();order.reset();$('items').replaceChildren();addItem();$('msg').textContent='';requestId=crypto.randomUUID()}
 async function dashboard(){
  cfg=await api({action:'dashboard',session});
- $('totals').replaceChildren();
- for(const values of cfg.counts){const row=$('totals').insertRow();values.forEach(v=>row.insertCell().textContent=v)}
+ drawSizeReport();
  if(!Array.isArray(cfg.orders))throw Error('กรุณาอัปเดต Apps Script เป็นรุ่นที่รองรับรายการจอง');
  drawMetrics();drawOrders();$('sheet').href=cfg.sheet;$('send').disabled=!cfg.ready;render();
 }
@@ -49,6 +48,38 @@ function page(id){
 }
 document.querySelectorAll('[data-page]').forEach(b=>b.onclick=()=>{page(b.dataset.page);if(b.dataset.page==='round')loadRound()});page('queue');
 function el(tag,text){const node=document.createElement(tag);node.textContent=text;return node}
+function drawSizeReport() {
+ const cards = document.createDocumentFragment();
+ const includeEmpty = $('show-empty-sizes').checked;
+ let paidTotal = 0;
+ let pendingTotal = 0;
+ for (const [size, paid, pending] of cfg.counts) {
+  paidTotal += paid;
+  pendingTotal += pending;
+  const total = paid + pending;
+  if (!total && !includeEmpty) continue;
+
+  const card = document.createElement('li');
+  if (!total) card.className = 'zero-size';
+  const heading = document.createElement('div');
+  heading.className = 'size-heading';
+  heading.append(el('h4', 'ไซส์ ' + size), el('strong', total.toLocaleString('th-TH') + ' ตัว'));
+  const breakdown = document.createElement('dl');
+  for (const [label, value] of [['ชำระแล้ว', paid], ['รอตรวจ / ต้องแก้ไข', pending]]) {
+   const line = document.createElement('div');
+   line.append(el('dt', label), el('dd', value.toLocaleString('th-TH')));
+   breakdown.append(line);
+  }
+  card.append(heading, breakdown);
+  cards.append(card);
+ }
+ $('size-all').textContent = (paidTotal + pendingTotal).toLocaleString('th-TH');
+ $('size-paid').textContent = paidTotal.toLocaleString('th-TH');
+ $('size-pending').textContent = pendingTotal.toLocaleString('th-TH');
+ $('sizes-empty').hidden = paidTotal + pendingTotal > 0;
+ $('totals').replaceChildren(cards);
+}
+$('show-empty-sizes').onchange = drawSizeReport;
 function drawOrders(){
  const q=$('search').value.trim().toLowerCase(),state=$('filter').value,list=$('bookings');
  list.replaceChildren();
